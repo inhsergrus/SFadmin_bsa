@@ -1,0 +1,38 @@
+---
+- hosts: zabbix
+  become: true
+  vars:
+    zbx_srv_ip: 51.250.105.164
+    zbx_agent_hostname: "{{ ansible_hostname if ansible_hostname  else zabbix_agent_hostname }}"
+  tasks:
+  - name: Install Zabbix agent
+    apt:
+      name=zabbix-agent
+      state=latest
+
+  - name: Change active server IP
+    ansible.builtin.lineinfile:
+      path: /etc/zabbix/zabbix_agentd.conf
+      regexp: '^ServerActive='
+      line: "ServerActive={{ zbx_srv_ip }}"
+      state: present
+
+  - name: Change hostname
+    ansible.builtin.lineinfile:
+      path: /etc/zabbix/zabbix_agentd.conf
+      regexp: '^Hostname=*'
+      line: "Hostname= {{ zbx_agent_hostname }}"
+      state: present
+
+  - name: Change server IP
+    ansible.builtin.lineinfile:
+      path: /etc/zabbix/zabbix_agentd.conf
+      regexp: '^Server='
+      line: "Server={{ zbx_srv_ip }}"
+      state: present
+
+  - name: Restart and enable zabbix-agent
+    ansible.builtin.systemd:
+      name: zabbix-agent
+      state: restarted
+      enabled: true
